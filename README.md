@@ -2,7 +2,7 @@
 
 Seedance 视频工作台，基于 [DeepKey 视频教程](https://doc.deepkey.top/#guide-seedance-video)，支持中文提示词和参考图生成视频。
 
-**Vercel 个人 Key 版**：每位使用者自行填写 DeepKey API Key，可选择保存在自己的浏览器。请求时 Key 临时经过 Vercel 转发给 DeepKey，应用不在服务器保存 Key。任务和参考图保存在 IndexedDB，支持备份恢复。Vercel 只需配置工作台密码，不需要 Redis、Blob 或共享 API Key。步骤见 [Vercel 部署指南](DEPLOY_VERCEL.md)。以下章节说明原有本地模式。
+**Vercel 个人 Key 版**：每位使用者自行填写 DeepKey API Key，可选择保存在自己的浏览器。请求时 Key 临时经过 Vercel 转发给 DeepKey，应用不在服务器保存 Key。任务和参考图保存在 IndexedDB，支持备份恢复。无需工作台登录或环境变量，不需要 Redis、Blob 或共享 API Key。步骤见 [Vercel 部署指南](DEPLOY_VERCEL.md)。以下章节说明原有本地模式。
 
 ## 启动
 
@@ -53,7 +53,7 @@ npm run build
 
 ## 品牌图标与 Safari
 
-Logo 使用翡翠绿底、白色 F 与浅绿播放符号，源文件为 `public/logo.svg`，1024px 导出为 `public/logo-1024.png`。网页侧栏和登录页使用同一图形。
+Logo 使用翡翠绿底、白色 F 与浅绿播放符号，源文件为 `public/logo.svg`，1024px 导出为 `public/logo-1024.png`。网页侧栏使用同一图形。
 
 - 标签栏：SVG、16/32px PNG，以及包含 16/32/48px 的 `favicon.ico`。
 - iPhone / iPad 主屏幕：180/167/152px 不透明方形 PNG，保留系统圆角裁切；默认根目录文件为 `apple-touch-icon.png`。

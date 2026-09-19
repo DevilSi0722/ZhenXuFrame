@@ -1,41 +1,23 @@
 import express from 'express';
-import { security, equalSecret } from './cloud-security.mjs';
 import { buildPayload } from '../shared/models.mjs';
 import { MAX_REQUEST_BYTES } from '../shared/limits.mjs';
 
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
-const cookieName = 'frame_session';
-const cookie = (value, age) => `${cookieName}=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${age}`;
 
 // Provider keys are request-scoped only: never read shared environment credentials.
 export function createCloudApp({ env = process.env, fetcher = fetch } = {}) {
   const app = express();
   app.disable('x-powered-by');
-  let auth;
   app.use('/api', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
     res.set('X-Content-Type-Options', 'nosniff');
     try {
-      auth ||= security(env);
       const origin = `${env.FRAME_CLOUD_DEV === '1' ? 'http' : 'https'}://${req.headers.host}`;
       if (req.headers['sec-fetch-site'] === 'cross-site' || (req.headers.origin && req.headers.origin !== origin)) throw fail('不允许跨站请求', 403);
       next();
     } catch (error) { next(fail(error.message, error.status || 503)); }
   });
-  const authenticated = req => {
-    const token = req.headers.cookie?.split(';').map(v => v.trim()).find(v => v.startsWith(`${cookieName}=`))?.slice(cookieName.length + 1);
-    return token && auth.verify(token);
-  };
-  app.get('/api/session', (req, res) => res.json({ cloud: true, storage: 'indexeddb', authenticated: !!authenticated(req) }));
-  let attempts = 0, resetAt = 0;
-  app.post('/api/login', express.json({ limit: 4096 }), (req, res) => {
-    if (Date.now() > resetAt) { attempts = 0; resetAt = Date.now() + 300000; }
-    if (++attempts > 30) throw fail('登录尝试过多，请稍后再试', 429);
-    if (typeof req.body?.password !== 'string' || !equalSecret(req.body.password, env.FRAME_PASSWORD)) throw fail('工作台密码不正确', 401);
-    res.set('Set-Cookie', cookie(auth.issue(), 7 * 86400)).json({ ok: true });
-  });
-  app.post('/api/logout', (_req, res) => res.set('Set-Cookie', cookie('', 0)).json({ ok: true }));
-  app.use('/api/provider', (req, _res, next) => next(authenticated(req) ? undefined : fail('工作台登录已过期，请刷新后重新登录', 401)));
+  app.get('/api/session', (_req, res) => res.json({ cloud: true, storage: 'indexeddb', authenticated: true }));
   async function relay(req, res, path, payload) {
     const authorization = req.headers.authorization;
     if (typeof authorization !== 'string' || !/^Bearer [^\s]{1,4096}$/.test(authorization)) throw fail('请配置自己的 API Key', 400);

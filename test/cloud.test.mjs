@@ -2,31 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { createCloudApp } from '../server/cloud-app.mjs';
-import { security } from '../server/cloud-security.mjs';
 import { MODELS } from '../shared/models.mjs';
 
-test('eight-character passwords work; sessions expire and reject tampering', () => {
-  const auth = security({ FRAME_PASSWORD: '12345678' });
-  const token = auth.issue(1000);
-  assert.equal(auth.verify(token, 2000), true);
-  assert.equal(auth.verify(token, 8 * 86400000), false);
-  assert.equal(auth.verify(token + 'x', 2000), false);
-  assert.throws(() => security({ FRAME_PASSWORD: '1234567' }));
-});
-test('cloud login works but all shared-key provider routes are removed', async t => {
-  const env = { FRAME_PASSWORD: 'test-password', FRAME_CLOUD_DEV: '1', DEEPKEY_API_KEY: 'must-never-be-used' };
+test('workspace opens without password configuration or cookies; old auth and shared-key routes are removed', async t => {
+  const env = { FRAME_CLOUD_DEV: '1', DEEPKEY_API_KEY: 'must-never-be-used' };
   let calls = 0;
   const server = createServer(createCloudApp({ env, fetcher: () => { calls++; } }));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }));
   const origin = `http://127.0.0.1:${server.address().port}/api`;
-  const login = await fetch(origin + '/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: env.FRAME_PASSWORD }) });
-  assert.equal(login.status, 200);
-  const cookie = login.headers.get('set-cookie').split(';')[0];
-  const session = await (await fetch(origin + '/session', { headers: { Cookie: cookie } })).json();
+  const bootstrap = await fetch(origin + '/session');
+  assert.equal(bootstrap.status, 200);
+  assert.equal(bootstrap.headers.get('set-cookie'), null);
+  const session = await bootstrap.json();
   assert.equal(session.authenticated, true);
-  for (const path of ['/settings', '/connection', '/videos', '/videos/query']) {
-    const response = await fetch(origin + path, { method: path === '/settings' ? 'GET' : 'POST', headers: { Cookie: cookie } });
+  for (const path of ['/login', '/logout', '/settings', '/connection', '/videos', '/videos/query']) {
+    const response = await fetch(origin + path, { method: path === '/settings' ? 'GET' : 'POST' });
     assert.equal(response.status, 404);
     assert.ok(!(await response.text()).includes(env.DEEPKEY_API_KEY));
   }
@@ -34,24 +25,22 @@ test('cloud login works but all shared-key provider routes are removed', async t
   assert.equal((await fetch(origin + '/session', { headers: { Origin: 'https://evil.example' } })).status, 403);
 });
 test('relay requires personal credentials and never reuses another visitors key', async t => {
-  const env = { FRAME_PASSWORD: 'test-password', FRAME_CLOUD_DEV: '1', DEEPKEY_API_KEY: 'owner-key' };
+  const env = { FRAME_CLOUD_DEV: '1', DEEPKEY_API_KEY: 'owner-key' };
   const sent = [];
   const server = createServer(createCloudApp({ env, fetcher: async (url, options) => { sent.push({ url, key: options.headers.Authorization, body: options.body }); return new Response(JSON.stringify({ data: [] })); } }));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }));
   const url = `http://127.0.0.1:${server.address().port}/api/provider/models`;
-  const Cookie = `frame_session=${security(env).issue()}`;
-  assert.equal((await fetch(url)).status, 401);
-  assert.equal((await fetch(url, { headers: { Cookie } })).status, 400);
+  assert.equal((await fetch(url)).status, 400);
   for (const key of ['visitor-a', 'visitor-b']) {
-    assert.equal((await fetch(url, { headers: { Cookie, Authorization: `Bearer ${key}` } })).status, 200);
+    assert.equal((await fetch(url, { headers: { Authorization: `Bearer ${key}` } })).status, 200);
   }
-  assert.equal((await fetch(url, { headers: { Cookie } })).status, 400);
+  assert.equal((await fetch(url)).status, 400);
   assert.deepEqual(sent.map(r => r.key), ['Bearer visitor-a', 'Bearer visitor-b']);
   assert.ok(sent.every(r => r.url === 'https://deepkey.top/v1/models'));
   const videoUrl = url.replace('/models', '/videos');
   const payload = { model: MODELS[0].id, prompt: 'test', aspect_ratio: '16:9', images: ['data:image/png;base64,YQ=='], apiKey: 'must-not-forward-in-body' };
-  const response = await fetch(videoUrl, { method: 'POST', headers: { Cookie, Authorization: 'Bearer visitor-c', 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const response = await fetch(videoUrl, { method: 'POST', headers: { Authorization: 'Bearer visitor-c', 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   assert.equal(response.status, 200);
   assert.equal(sent[2].key, 'Bearer visitor-c');
   assert.equal(sent[2].url, 'https://deepkey.top/v1/videos');

@@ -2,8 +2,8 @@
 
 1. 将源代码提交到 GitHub，在 Vercel 导入仓库。不要提交 `.local`、真实 `.env` 或 `node_modules`。
 2. 框架选择 Vite，构建命令 `npm run build`，输出目录 `dist`，Node.js 22.x 或 24.x。
-3. 仅需设置 `FRAME_PASSWORD`（至少 8 位）。可选 `FRAME_SECRET`（至少 32 位）。修改后重新部署。
-4. 登录网站，在「连接设置」填写自己的 DeepKey API Key，点击「保存并测试连接」。
+3. 无需配置环境变量，直接部署。旧的 `FRAME_PASSWORD`、`FRAME_SECRET` 不再使用，可删除。
+4. 打开网站直接进入工作台，在「连接设置」填写自己的 DeepKey API Key，点击「保存并测试连接」。
 
 ## 密钥保存与传输
 
@@ -11,8 +11,8 @@
 - 勾选「在此浏览器记住 API Key」后才写入此域名的 LocalStorage。不跨设备同步，不写入任务 IndexedDB 或备份；浏览器扩展或同源脚本可能访问它，不要在公共设备保存。
 - 取消勾选后保存，会移除持久存储但保留当前页面的 Key。「清除 API Key」同时清除当前页面和持久保存的 Key。
 - 生成、查询、测试连接时，Key 放在 HTTPS Authorization 请求头，经 Vercel 临时转发到固定的 `https://deepkey.top`。应用不写入服务端文件、数据库、Cookie 或日志，不存入模块级缓存。Vercel 和 DeepKey 在处理请求时会接触 Key；这不是端到端直连。不要添加会记录请求头的第三方日志或监控。
-- 旧的 `/api/videos`、`/api/videos/query`、`/api/connection` 和 `/api/settings` 接口已移除。新 `/api/provider/*` 接口必须携带当前访问者的 Key 和有效登录会话。即使环境变量中仍有 `DEEPKEY_API_KEY`，也不会使用；可在部署后删除旧变量。
-- 工作台登录密码保持不变。浏览器内的数据不会因退出登录自动清除；共享设备请手动清除 Key。
+- 旧的 `/api/videos`、`/api/videos/query`、`/api/connection`、`/api/settings`、`/api/login` 和 `/api/logout` 接口已移除。新 `/api/provider/*` 接口必须携带当前访问者的 Key，由 DeepKey 校验有效性，不需要本站登录会话。即使环境变量中仍有 `DEEPKEY_API_KEY`，也不会使用；可在部署后删除旧变量。
+- 网站直接进入工作台，不设置登录 Cookie；共享设备请手动清除 Key。任务和备份仍只保存在当前浏览器。
 
 ## 转发方式
 

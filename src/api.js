@@ -21,7 +21,6 @@ async function networkApi(path, options = {}) {
   const response = await fetch(`/api${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
   let data;
   try { data = await response.json(); } catch { throw new Error(`服务暂不可用 (${response.status})，请稍后重试`); }
-  if (response.status === 401 && path !== '/login') window.dispatchEvent(new Event('frame-session-expired'));
   if (!response.ok) throw Object.assign(new Error(data.error || `请求失败 (${response.status})`), { status: response.status, retryMs: data.retryMs });
   return data;
 }
