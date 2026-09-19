@@ -1,11 +1,24 @@
 let cloudMode = false;
+let browserJobs;
+async function browserService() {
+  if (!browserJobs) {
+    const { createBrowserJobs } = await import('./browser-jobs.mjs');
+    browserJobs ||= createBrowserJobs({ request: networkApi, changed: () => window.dispatchEvent(new Event('frame-jobs-changed')) });
+  }
+  return browserJobs;
+}
 export function setCloudMode(value) { cloudMode = !!value; }
+export const usesBrowserStorage = () => cloudMode;
 export async function api(path, options = {}) {
+  if (cloudMode && (path === '/jobs' || path.startsWith('/jobs/') || path.startsWith('/jobs?'))) return (await browserService()).route(path, options);
+  return networkApi(path, options);
+}
+async function networkApi(path, options = {}) {
   const response = await fetch(`/api${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
   let data;
   try { data = await response.json(); } catch { throw new Error(`服务暂不可用 (${response.status})，请稍后重试`); }
   if (response.status === 401 && path !== '/login') window.dispatchEvent(new Event('frame-session-expired'));
-  if (!response.ok) throw new Error(data.error || `请求失败 (${response.status})`);
+  if (!response.ok) throw Object.assign(new Error(data.error || `请求失败 (${response.status})`), { status: response.status, retryMs: data.retryMs });
   return data;
 }
 export const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body ?? {}) });
@@ -18,13 +31,6 @@ export function saveDraft(draft) {
 export async function fileData(file) {
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) throw new Error('仅支持 PNG、JPEG、WebP 图片');
   if (file.size > 10 * 1024 * 1024) throw new Error('单张参考图请控制在 10 MB 以内');
-  if (cloudMode) {
-    const { upload } = await import('@vercel/blob/client');
-    const ext = file.type.split('/')[1];
-    const pathname = `references/${crypto.randomUUID()}.${ext}`;
-    await upload(pathname, file, { access: 'private', handleUploadUrl: '/api/upload', contentType: file.type, multipart: file.size > 4 * 1024 * 1024 });
-    return { name: file.name, value: `https://frame-reference.invalid/${pathname}` };
-  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve({ name: file.name, value: reader.result });
@@ -33,5 +39,22 @@ export async function fileData(file) {
   });
 }
 export function imageSource(value) {
-  return value.startsWith('https://frame-reference.invalid/') ? `/api/references?path=${encodeURIComponent(value.slice('https://frame-reference.invalid/'.length))}` : value;
+  return value;
+}
+export async function exportBackup() {
+  const service = await browserService();
+  const backup = await service.backup();
+  const url = URL.createObjectURL(new Blob([JSON.stringify(backup)], { type: 'application/json' }));
+  const link = document.createElement('a'); link.href = url; link.download = `frame-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return backup.jobs.length;
+}
+export async function importBackup(file) {
+  if (file.size > 200 * 1024 * 1024) throw new Error('备份文件不能超过 200 MB');
+  let value;
+  try { value = JSON.parse(await file.text()); } catch { throw new Error('备份文件不是有效 JSON'); }
+  const result = await (await browserService()).db.importBackup(value);
+  window.dispatchEvent(new Event('frame-jobs-changed'));
+  return result;
 }

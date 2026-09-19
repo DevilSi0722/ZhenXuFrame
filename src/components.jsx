@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { X, ImagePlus, Link2, Plus, ArrowUp, ArrowDown, LoaderCircle, CheckCircle2, AlertCircle, Clock3 } from 'lucide-react';
-import { fileData, imageSource } from './api';
+import { fileData, imageSource, usesBrowserStorage } from './api';
 import { publicUrl, statusLabel } from '../shared/models.mjs';
 
 export function IconButton({ title, children, ...props }) {
@@ -48,6 +48,7 @@ export function ReferenceImages({ images, setImages, notify }) {
       {busy ? <LoaderCircle className="spin" size={22} /> : <ImagePlus size={23} />}<strong>{busy ? '正在处理图片' : '上传参考图片'}</strong><span>PNG / JPG / WebP · 单张 ≤ 10 MB</span>
     </button>}
     <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onChange={e => addFiles(e.target.files)} />
+    {usesBrowserStorage() && <p className="settings-note">提交时按总大小自动压缩图片，转为 JPEG 时透明区域会变为白底。原图随任务保存在此浏览器，可导出备份。</p>}
     {showUrl && <div className="url-input"><input aria-label="参考图片链接" placeholder="https://example.com/image.jpg" value={url} onChange={e => setUrl(e.target.value)} /><IconButton title="添加图片链接" onClick={addUrl}><Plus size={18} /></IconButton></div>}
   </div>;
 }
