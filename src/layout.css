@@ -1,0 +1,115 @@
+/* The shell owns the viewport; only its content panes scroll. */
+.app-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.main-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.topbar, .service-error, .submission-note { flex-shrink: 0; }
+.sidebar { overflow-y: auto; overscroll-behavior-y: contain; }
+.sidebar > * { flex-shrink: 0; }
+.studio {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: minmax(0, 1fr);
+}
+.composer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.composer-heading, .composer > .modes { flex-shrink: 0; }
+.composer > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.composer-fields {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding: 0 5px 12px 0;
+  scroll-padding-block: 12px;
+  overscroll-behavior-y: contain;
+}
+.generate-area {
+  position: static;
+  flex-shrink: 0;
+  padding-top: 12px;
+  padding-bottom: 0;
+  border-top: 1px solid var(--border);
+  background: white;
+  box-shadow: none;
+}
+.workspace {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+.workspace > * { flex-shrink: 0; }
+.main-shell > .history-page, .main-shell > .settings-page, .loading-state {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+.history-page { --history-inset: 35px; }
+.history-toolbar {
+  position: sticky;
+  top: calc(-1 * var(--history-inset));
+  z-index: 2;
+  padding-top: 12px;
+  background: #f6f8f9;
+}
+.composer-fields, .workspace, .history-page, .settings-page, .studio {
+  scrollbar-width: thin;
+  scrollbar-color: #b6c5bd transparent;
+}
+@media (max-width: 1150px) {
+  .history-page { --history-inset: 30px; }
+}
+
+@media (max-width: 720px) {
+  .history-page { --history-inset: 26px; }
+  .app-shell { display: flex; flex-direction: column; }
+  .sidebar {
+    position: relative;
+    flex: 0 0 auto;
+    height: calc(59px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    overflow: visible;
+  }
+  .main-shell { flex: 1; }
+  .topbar { min-height: 43px; height: auto; padding-block: 10px; gap: 8px; }
+  .topbar-right { gap: 7px; }
+  .breadcrumb { gap: 6px; }
+  .studio {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+  .composer, .workspace { flex: 0 0 auto; overflow: visible; }
+  .composer > form { display: block; overflow: visible; }
+  .composer-fields { overflow: visible; padding: 0 0 12px; }
+  .workspace { scrollbar-gutter: auto; }
+  .workspace, .main-shell > .history-page, .main-shell > .settings-page {
+    padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+  .app-shell input, .app-shell select, .app-shell textarea { font-size: 16px; }
+}
