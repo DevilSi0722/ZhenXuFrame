@@ -10,7 +10,7 @@
 
 | 变量 | 内容 |
 | --- | --- |
-| `FRAME_PASSWORD` | 自己的工作台登录密码，至少 16 位，推荐随机密码 |
+| `FRAME_PASSWORD` | 自己的工作台登录密码，至少 8 位，推荐随机密码 |
 | `DEEPKEY_API_KEY` | 具有 Seedance 权限的 DeepKey Key |
 
 可选变量 `DEEPKEY_BASE_URL` 默认为 `https://deepkey.top`。可选 `FRAME_SECRET` 用于独立会话签名，设置时至少 32 位；不设置也能使用。不要给密钥变量加 `VITE_` 前缀。
