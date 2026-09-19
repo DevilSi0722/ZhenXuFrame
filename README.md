@@ -50,3 +50,14 @@ npm run build
 ```
 
 `PORT` 可覆盖端口，`FRAME_DATA_DIR` 可隔离测试数据。视觉素材 `public/generated/lake.png` 为 AI 生成的灵感参考图片，不是模型输出的视频。
+
+## 品牌图标与 Safari
+
+Logo 使用翡翠绿底、白色 F 与浅绿播放符号，源文件为 `public/logo.svg`，1024px 导出为 `public/logo-1024.png`。网页侧栏和登录页使用同一图形。
+
+- 标签栏：SVG、16/32px PNG，以及包含 16/32/48px 的 `favicon.ico`。
+- iPhone / iPad 主屏幕：180/167/152px 不透明方形 PNG，保留系统圆角裁切；默认根目录文件为 `apple-touch-icon.png`。
+- Safari 固定标签：单层纯黑、透明背景、`viewBox="0 0 16 16"` 的 `safari-pinned-tab.svg`，通过 `mask-icon` 指定品牌色。
+- Web App Manifest：提供 192/512px 图标及主屏幕名称「帧序」。不提供离线生成功能。
+
+图标已在 `index.html` 显式声明，部署时无需额外配置。运行 `npm run icons` 可从 `scripts/generate-icons.mjs` 重新导出全部尺寸，再运行 `npm run build`。Apple 规范参考：[Web Clip 图标](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html)、[Safari 固定标签](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/pinnedTabs/pinnedTabs.html)。Safari 可能缓存旧图标，部署后可重新打开页面；已有主屏幕快捷方式必要时移除后重新添加。当前在 Windows 验证了文件规格、资源可访问性和浏览器声明，未在 Safari 真机上验证。

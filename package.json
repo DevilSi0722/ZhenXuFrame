@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22 <25" },
+  "engines": {
+    "node": ">=22 <25"
+  },
   "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
     "dev": "node server/index.mjs",
     "build": "vite build",
     "start": "node server/index.mjs --production",
@@ -21,6 +24,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
+    "sharp": "^0.35.4",
     "vite": "^6.3.5"
   }
 }

@@ -10,3 +10,5 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .login-page{min-height:100dvh;display:grid;place-items:center;padding:24px}.login-card{width:min(100%,400px);padding:36px;background:white;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 50px #243d3410}.login-card h1{margin:18px 0 10px}.login-card>p{color:#7b8490;line-height:1.8}.login-card form{display:grid;gap:14px;margin-top:26px}.login-card form button{justify-content:center;margin-top:6px}.login-card .inline-error{margin-top:16px;color:#b64d43;overflow-wrap:anywhere}.topbar-right{gap:12px}
+
+.brand-icon:has(img){width:38px;height:38px;background:transparent}.brand-icon img{display:block;width:100%;height:100%}
