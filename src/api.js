@@ -1,15 +1,19 @@
+import { createBrowserProvider } from './browser-provider.mjs';
 let cloudMode = false;
+let provider;
+const providerApi = (path, options) => (provider ||= createBrowserProvider())(path, options);
 let browserJobs;
 async function browserService() {
   if (!browserJobs) {
     const { createBrowserJobs } = await import('./browser-jobs.mjs');
-    browserJobs ||= createBrowserJobs({ request: networkApi, changed: () => window.dispatchEvent(new Event('frame-jobs-changed')) });
+    browserJobs ||= createBrowserJobs({ request: providerApi, changed: () => window.dispatchEvent(new Event('frame-jobs-changed')) });
   }
   return browserJobs;
 }
 export function setCloudMode(value) { cloudMode = !!value; }
 export const usesBrowserStorage = () => cloudMode;
 export async function api(path, options = {}) {
+  if (cloudMode && ['/settings', '/connection'].includes(path)) return providerApi(path, options);
   if (cloudMode && (path === '/jobs' || path.startsWith('/jobs/') || path.startsWith('/jobs?'))) return (await browserService()).route(path, options);
   return networkApi(path, options);
 }

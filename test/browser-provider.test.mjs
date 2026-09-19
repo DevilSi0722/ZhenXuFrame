@@ -1,0 +1,42 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createBrowserProvider } from '../src/browser-provider.mjs';
+const store = () => { const rows = new Map(); return { getItem: k => rows.get(k), setItem: (k, v) => rows.set(k, v), removeItem: k => rows.delete(k) }; };
+const save = (api, apiKey, rememberKey = false, clearKey = false) => api('/settings', { method: 'PUT', body: JSON.stringify({ apiKey, rememberKey, clearKey }) });
+test('keys default to memory; opt-in persistence and clearing survive reload', async () => {
+  const storage = store();
+  const api = createBrowserProvider({ storage, fetcher: () => { throw new Error('must not call'); } });
+  assert.equal((await save(api, 'personal-secret')).hasKey, true);
+  assert.equal((await createBrowserProvider({ storage })('/settings')).hasKey, false);
+  await save(api, '', true);
+  assert.equal((await createBrowserProvider({ storage })('/settings')).hasKey, true);
+  const settings = await api('/settings');
+  assert.ok(!JSON.stringify(settings).includes('personal-secret'));
+  await save(api, '', false);
+  assert.equal((await api('/settings')).hasKey, true);
+  assert.equal((await createBrowserProvider({ storage })('/settings')).hasKey, false);
+  await save(api, '', false, true);
+  assert.equal((await api('/settings')).hasKey, false);
+});
+test('requests use personal-key relay, strip local metadata, and reject changed keys', async () => {
+  const calls = [];
+  const api = createBrowserProvider({ storage: store(), fetcher: async (url, init) => { calls.push({ url, init }); return new Response(JSON.stringify({ id: 'remote-1', status: 'queued' })); } });
+  const config = await save(api, 'user-key');
+  const body = JSON.stringify({ connectionId: config.connectionId, prompt: 'test', images: ['data:image/png;base64,YQ=='] });
+  const job = await api('/videos', { body });
+  assert.equal(job.remoteId, 'remote-1');
+  assert.equal(calls[0].url, '/api/provider/videos');
+  assert.equal(calls[0].init.headers.Authorization, 'Bearer user-key');
+  assert.equal(calls[0].init.credentials, 'same-origin');
+  assert.equal(JSON.parse(calls[0].init.body).connectionId, undefined);
+  await save(api, 'another-key');
+  await assert.rejects(api('/videos', { body }), /已更改/);
+  assert.equal(calls.length, 1);
+});
+test('network failure never retries a paid request', async () => {
+  let calls = 0;
+  const api = createBrowserProvider({ storage: store(), fetcher: async () => { calls++; throw new TypeError('Failed to fetch'); } });
+  const config = await save(api, 'user-key');
+  await assert.rejects(api('/videos', { body: JSON.stringify({ connectionId: config.connectionId }) }), /无法连接/);
+  assert.equal(calls, 1);
+});

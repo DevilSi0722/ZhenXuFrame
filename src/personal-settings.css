@@ -1,0 +1,2 @@
+.settings-page .remember-key { display: flex; align-items: center; gap: 10px; margin-top: 20px; cursor: pointer; }
+.settings-page .remember-key input { width: 16px; height: 16px; flex: 0 0 16px; margin: 0; accent-color: #117b54; }

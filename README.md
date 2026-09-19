@@ -2,7 +2,7 @@
 
 Seedance 视频工作台，基于 [DeepKey 视频教程](https://doc.deepkey.top/#guide-seedance-video)，支持中文提示词和参考图生成视频。
 
-**Vercel 简化版**：私人登录、浏览器 IndexedDB 保存任务和参考图、备份导入导出、参考图自动压缩与按需状态同步。不需要 Redis 或 Blob，只需配置工作台密码和 DeepKey API Key。步骤见 [Vercel 部署指南](DEPLOY_VERCEL.md)。以下章节说明原有本地模式。
+**Vercel 个人 Key 版**：每位使用者自行填写 DeepKey API Key，可选择保存在自己的浏览器。请求时 Key 临时经过 Vercel 转发给 DeepKey，应用不在服务器保存 Key。任务和参考图保存在 IndexedDB，支持备份恢复。Vercel 只需配置工作台密码，不需要 Redis、Blob 或共享 API Key。步骤见 [Vercel 部署指南](DEPLOY_VERCEL.md)。以下章节说明原有本地模式。
 
 ## 启动
 

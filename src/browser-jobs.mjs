@@ -41,7 +41,7 @@ export function createBrowserJobs({ db = createBrowserDB(), request, prepare = p
         const payload = buildPayload(body);
         if (payload.prompt.length > 8000) throw new Error('提示词最多 8000 个字符');
         const c = await getSettings();
-        if (!c.hasKey) throw new Error('请在 Vercel 环境变量中配置 DEEPKEY_API_KEY');
+        if (!c.hasKey) throw new Error('请在连接设置中填写自己的 API Key');
         const prepared = await prepare(payload);
         const model = MODELS.find(m => m.id === payload.model);
         const job = { id: uuid(), requestToken: body.requestToken, createdAt: new Date().toISOString(), model: payload.model, prompt: payload.prompt, seconds: model.seconds || payload.seconds, ratio: payload.aspect_ratio, status: 'submitting', progress: 0, referenceCount: payload.images?.length || 0, baseUrl: c.baseUrl, connectionId: c.connectionId, browserStored: true };
